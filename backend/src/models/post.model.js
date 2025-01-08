@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const PostSchema = new mongoose.Schema({
     title: {
         type: String,
-        required: true,
+        required: [true, 'Post title is required.'],
         trim: true,
         index: true
     },
@@ -31,8 +31,8 @@ const PostSchema = new mongoose.Schema({
         default: 'draft'
     },
     categories: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Category'
+        type: String,
+        trim: true
     }],
     tags: [{
         type: String,
@@ -51,7 +51,7 @@ const PostSchema = new mongoose.Schema({
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User'
         },
-        addedAt: { type: Date, default: DataTransferIte.now }
+        addedAt: { type: Date, default: Date.now }
     },
     highlights: [{
         text: {

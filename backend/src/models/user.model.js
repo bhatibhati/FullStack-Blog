@@ -39,11 +39,6 @@ const UserSchema = new mongoose.Schema({
         enum: ['admin', 'writer', 'reader'],
         default: 'reader'
     },
-    accountStatus: {
-        type: String,
-        enum: ['active', 'inactive', 'suspended'],
-        default: 'active'
-    },
     avatar: {
         type: String,
         default: null
@@ -77,7 +72,11 @@ const UserSchema = new mongoose.Schema({
             type: Date,
             default: Date.now
         }
-    }]
+    }],
+    isDeleted: {
+        type: Boolean,
+        default: false
+    }
 }, { timestamps: true })
 
 export const User = mongoose.model('User', UserSchema)
