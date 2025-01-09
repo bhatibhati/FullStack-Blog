@@ -1,8 +1,8 @@
-import { Post } from "../models/post.model";
+import { Post } from "../models/post.model.js";
 
 const getAllPosts = async (req, res) => {
     try {
-        const posts = await Post.find()
+        const posts = await Post.find().populate('author', 'username')
         res.json(posts)
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch posts.' })
@@ -10,8 +10,10 @@ const getAllPosts = async (req, res) => {
 }
 
 const createPost = async (req, res) => {
+    const { title, content, author } = req.body
     try {
-        const newPost = await Post.create(req.body)
+        // const findPost = 
+        const newPost = await Post.create({ title, content, author })
         res.status(201).json(newPost)
     } catch (err) {
         res.status(400).json({ error: err.message })
@@ -21,7 +23,7 @@ const createPost = async (req, res) => {
 const getPost = async (req, res) => {
     const { id } = req.params
     try {
-        const post = await Post.findById(id)
+        const post = await Post.findById(id).polulate('author', 'username')
         if (!post) {
             return res.status(404).json({ error: 'Post not found.' })
         }

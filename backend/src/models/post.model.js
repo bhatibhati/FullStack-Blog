@@ -3,27 +3,22 @@ import mongoose from "mongoose";
 const PostSchema = new mongoose.Schema({
     title: {
         type: String,
-        required: [true, 'Post title is required.'],
+        required: [true, 'Post title is required'],
         trim: true,
         index: true
-    },
-    slug: {
-        type: String,
-        unique: true,
-        required: true
     },
     content: {
         type: String,
         required: true
     },
-    readingTime: {
-        type: Number,
-        default: 0
-    },
     author: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
+    },
+    readingTime: {
+        type: Number,
+        default: 0
     },
     status: {
         type: String,
@@ -51,7 +46,10 @@ const PostSchema = new mongoose.Schema({
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User'
         },
-        addedAt: { type: Date, default: Date.now }
+        addedAt: {
+            type: Date,
+            default: null
+        }
     },
     highlights: [{
         text: {
@@ -68,11 +66,24 @@ const PostSchema = new mongoose.Schema({
         }
     }],
     comments: [{
-        user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-        content: { type: String, required: true },
+        user: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            required: true
+        },
+        content: {
+            type: String,
+            required: true
+        },
         replies: [{
-            user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-            content: { type: String, required: true },
+            user: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'User'
+            },
+            content: {
+                type: String,
+                required: true
+            },
             createdAt: Date
         }],
         createdAt: Date

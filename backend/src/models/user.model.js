@@ -1,9 +1,10 @@
 import mongoose from "mongoose";
+import bcrypt from 'bcrypt'
 
 const UserSchema = new mongoose.Schema({
     fullName: {
         type: String,
-        required: [true, 'Please add your first name.'],
+        required: [true, 'Please add your full name'],
         trim: true,
         index: true
     },
@@ -13,12 +14,15 @@ const UserSchema = new mongoose.Schema({
         minlength: [3, 'Username must be 3 letters long'],
         unique: true,
         lowercase: true,
+        trim: true,
+        index: true
     },
     email: {
         type: String,
         required: [true, 'Please provide your email address.'],
         unique: true,
         lowercase: true,
+        trim: true,
         match: [
             /^\S+@\S+\.\S+$/,
             'Please provide a valid email address.'
@@ -78,5 +82,18 @@ const UserSchema = new mongoose.Schema({
         default: false
     }
 }, { timestamps: true })
+
+UserSchema.pre('save', async function (next) {
+    if (!this.isModified('password')) {
+        return next()
+    }
+
+    this.password = await bcrypt.hash(this.password, 10)
+    next()
+})
+
+UserSchema.methods.isPasswordCorrect = async function (password) {
+    return await bcrypt.compare(password, this.password)
+}
 
 export const User = mongoose.model('User', UserSchema)

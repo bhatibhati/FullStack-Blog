@@ -1,6 +1,6 @@
-import mongoose from "mongoose";
+import mongoose, { Schema } from "mongoose";
 
-const MediaSchema = new mongoose.Schema({
+const MediaSchema = new Schema({
     url: { type: String, required: true },
     type: { type: String, enum: ['image', 'video', 'document'] },
     filename: String,
