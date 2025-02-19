@@ -5,16 +5,23 @@ const PostSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Post title is required'],
         trim: true,
-        index: true
+        index: true,
+        maxlength: [100, 'Title must not exceed 100 characters'],
     },
     content: {
         type: String,
-        required: true
+        required: [true, 'Content for the post is required']
     },
     author: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        required: [true, 'Author ID for post is required']
+    },
+    description: {
+        type: String,
+        required: [true, 'Post description is required'],
+        trim: true,
+        maxLength: [150, 'Post description cannot exceed 100 characters']
     },
     readingTime: {
         type: Number,
@@ -34,8 +41,18 @@ const PostSchema = new mongoose.Schema({
         trim: true
     }],
     media: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Media'
+        url: {
+            type: String,
+            required: true
+        },
+        altText: {
+            type: String,
+            trim: true
+        },
+        metadata: {
+            width: Number,
+            height: Number,
+        }
     }],
     views: {
         type: Number,

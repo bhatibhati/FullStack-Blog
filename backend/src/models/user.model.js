@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from 'bcrypt'
+import jwt from 'jsonwebtoken'
 
 const UserSchema = new mongoose.Schema({
     fullName: {
@@ -13,6 +14,7 @@ const UserSchema = new mongoose.Schema({
         required: [true, 'Please provide a username.'],
         minlength: [3, 'Username must be 3 letters long'],
         unique: true,
+        match: [/^[a-zA-Z0-9_]+$/, 'Username can only contain alphanumeric characters and underscores'],
         lowercase: true,
         trim: true,
         index: true
@@ -36,6 +38,7 @@ const UserSchema = new mongoose.Schema({
         type: String,
         maxlength: [200, 'Bio should not be more than 200'],
         default: "",
+        trim: true
     },
     role: {
         type: String,
@@ -77,6 +80,9 @@ const UserSchema = new mongoose.Schema({
             default: Date.now
         }
     }],
+    refreshToken: {
+        type: String
+    },
     isDeleted: {
         type: Boolean,
         default: false
@@ -94,6 +100,33 @@ UserSchema.pre('save', async function (next) {
 
 UserSchema.methods.isPasswordCorrect = async function (password) {
     return await bcrypt.compare(password, this.password)
+}
+
+UserSchema.methods.generateAccessToken = function () {
+    return jwt.sign(
+        {
+            _id: this._id,
+            email: this.email,
+            username: this.username,
+            fullName: this.fullName
+        },
+        process.env.ACCESS_TOKEN_SECRET,
+        {
+            expiresIn: process.env.ACCESS_TOKEN_EXPIRY
+        }
+    )
+}
+
+UserSchema.methods.generateRefreshToken = function () {
+    return jwt.sign(
+        {
+            _id: this._id,
+        },
+        process.env.REFRESH_TOKEN_SECRET,
+        {
+            expiresIn: process.env.REFRESH_TOKEN_EXPIRY
+        }
+    )
 }
 
 export const User = mongoose.model('User', UserSchema)
