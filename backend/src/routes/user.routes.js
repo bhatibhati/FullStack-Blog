@@ -1,6 +1,6 @@
 import { Router } from 'express'
 const router = Router()
-import { signupUser, loginUser, logoutUser, patchUser, deleteUser } from '../controllers/user.controllers.js'
+import { signupUser, loginUser, logoutUser, refreshAccessToken, patchUser, deleteUser } from '../controllers/user.controllers.js'
 import { upload } from '../middlewares/multer.middleware.js'
 import { verifyJWT } from '../middlewares/auth.middleware.js'
 
@@ -12,6 +12,7 @@ router.post('/signup',
     signupUser)
 router.post('/login', loginUser)
 router.post('/logout', verifyJWT, logoutUser)
+router.post('refresh-token', refreshAccessToken)
 
 router.patch('/:id', patchUser)
 router.delete('/:id', deleteUser)

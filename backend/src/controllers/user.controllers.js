@@ -2,6 +2,7 @@ import mongoose from "mongoose"
 import { User } from "../models/user.model.js"
 import bcrypt from 'bcrypt'
 import { uploadOnCloudinary } from '../utils/cloudinary.js'
+import jwt from 'jsonwebtoken'
 import { upload } from "../middlewares/multer.middleware.js"
 
 const generateAccessAndRefreshTokens = async (userId) => {
@@ -79,7 +80,7 @@ const signupUser = async (req, res) => {
 const loginUser = async (req, res) => {
     const { username, email, password } = req.body
 
-    if (!username || !email) {
+    if (!username && !email) {
         return res.status(400).json({ error: 'username or email is required' });
     }
 
@@ -124,7 +125,7 @@ const loginUser = async (req, res) => {
 
 const logoutUser = async (req, res) => {
     await User.findByIdAndUpdate(
-        req.users._id,
+        req.user._id,
         {
             $set:
                 { refreshToken: undefined }
@@ -139,8 +140,48 @@ const logoutUser = async (req, res) => {
 
     return res.status(200)
         .clearCookie('accessToken', options)
-        .clearCookie('accessToken', options)
+        .clearCookie('refreshToken', options)
         .json({ message: "User logged out" })
+}
+
+const refreshAccessToken = async (req, res) => {
+    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+
+    if (!incomingRefreshToken) {
+        return res.status(401).json({ message: 'Unauthorized request' })
+    }
+
+    try {
+        const decodedToken = jwt.verify(
+            incomingRefreshToken,
+            process.env.ACCESS_TOKEN_SECRET)
+
+        const user = await User.findById(decodedToken._id)
+
+        if (!user) {
+            re.status(401).json({ message: 'Invalid refresh token' })
+        }
+
+        if (incomingRefreshToken !== user?.refreshToken) {
+            res.status(401).json({ message: 'Refresh token is expired or used' })
+        }
+
+        const options = {
+            httpOnly: true,
+            secure: true
+        }
+
+        const { accessToken, newRefreshToken } = await generateAccessAndRefreshTokens(user._id)
+
+        return res
+            .status(200)
+            .cookie('accessToken', accessToken, options)
+            .cookie('refreshToken', newRefreshToken, options)
+            .json({ accessToken, refreshToken: newRefreshToken, message: 'Access token refreshed' })
+
+    } catch (error) {
+        return res.status(401).json({ message: error?.message || 'invalid refresh token' })
+    }
 }
 
 const patchUser = async (req, res) => {
@@ -201,4 +242,4 @@ const deleteUser = async (req, res) => {
     }
 }
 
-export { signupUser, loginUser, logoutUser, patchUser, deleteUser }
+export { signupUser, loginUser, logoutUser, refreshAccessToken, patchUser, deleteUser }
