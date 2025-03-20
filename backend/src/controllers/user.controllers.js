@@ -127,8 +127,8 @@ const logoutUser = async (req, res) => {
     await User.findByIdAndUpdate(
         req.user._id,
         {
-            $set:
-                { refreshToken: undefined }
+            $unset:
+                { refreshToken: 1 }
         },
         { new: true }
     )
@@ -159,7 +159,7 @@ const refreshAccessToken = async (req, res) => {
         const user = await User.findById(decodedToken._id)
 
         if (!user) {
-            re.status(401).json({ message: 'Invalid refresh token' })
+            res.status(401).json({ message: 'Invalid refresh token' })
         }
 
         if (incomingRefreshToken !== user?.refreshToken) {
@@ -184,13 +184,34 @@ const refreshAccessToken = async (req, res) => {
     }
 }
 
+const changeCurrentPassword = async (req, res) => {
+    const { oldPassword, newPassword } = req.body
+
+    const user = await User.findById(req.user?.id)
+    const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
+
+    if (!isPasswordCorrect) {
+        return res.status(400).json({ message: 'Invalid password' })
+    }
+
+    user.password = newPassword
+    await user.save({ validateBeforeSave: false })
+
+    res.status(200).json({ message: 'Password changed successfully' })
+}
+
+const getCurrentUser = async (req, res) => {
+    if (!req.user) {
+        return res.status(401).json({ message: 'User not found or unauthorized' })
+    }
+
+    return res.status(200).json({ user: req.user, message: 'User retrieved successfully' })
+}
+
 const patchUser = async (req, res) => {
-    const { id } = req.params
+    const userId = req.user._id
     const updates = req.body
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-        return res.status(400).json({ error: 'Invalid user ID format' })
-    }
     // Check for empty updates
     if (!updates || Object.keys(updates).length === 0) {
         return res.status(400).json({ error: 'No updates provided' });
@@ -205,7 +226,7 @@ const patchUser = async (req, res) => {
         }
 
         const updatedUser = await User.findByIdAndUpdate(
-            id,
+            userId,
             updates,
             { new: true, runValidators: true }
         )
@@ -223,16 +244,64 @@ const patchUser = async (req, res) => {
     }
 }
 
+const updateUserAvatar = async (req, res) => {
+    const avatarLocalPath = req.file?.path
+
+    if (!avatarLocalPath) {
+        return res.status(400).json({ message: 'Avatar file is missing' })
+    }
+
+    const avatar = await uploadOnCloudinary(avatarLocalPath)
+
+    if (!avatar.url) {
+        return res.status(400).json({ message: 'Error while uploading on avatar' })
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set: {
+                avatar: avatar.url
+            }
+        },
+        { new: true }
+    ).select('-password')
+
+    return res.status(200).json({ user, message: 'Avatar image updated successfully' })
+
+}
+
+const updateUserCoverImage = async (req, res) => {
+    const coverImgLocalPath = req.file?.path
+
+    if (!coverImgLocalPath) {
+        return res.status(400).json({ message: 'Cover image file is missing' })
+    }
+
+    const coverImg = await uploadOnCloudinary(coverImgLocalPath)
+
+    if (!coverImg.url) {
+        return res.status(400).json({ message: 'Error while uploading cover image' })
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set: {
+                coverImage: coverImg.url
+            }
+        },
+        { new: true }
+    ).select('-password')
+
+    return res.status(200).json({ user, message: 'Cover image updated successfully' })
+
+}
+
 const deleteUser = async (req, res) => {
-    const { id } = req.params
-
     try {
-        // validate ID format
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({ error: 'Invalid user ID format' })
-        }
-
-        const deletedUser = await User.findByIdAndDelete(id)
+        const userId = req.user._id
+        const deletedUser = await User.findByIdAndDelete(userId)
         if (!deletedUser) {
             return res.status(404).json({ error: 'User not found' })
         }
@@ -242,4 +311,4 @@ const deleteUser = async (req, res) => {
     }
 }
 
-export { signupUser, loginUser, logoutUser, refreshAccessToken, patchUser, deleteUser }
+export { signupUser, loginUser, logoutUser, refreshAccessToken, changeCurrentPassword, patchUser, deleteUser, updateUserAvatar, updateUserCoverImage, getCurrentUser }
