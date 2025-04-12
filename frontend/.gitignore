@@ -27,4 +27,4 @@ build/
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?
+*.sw?0
